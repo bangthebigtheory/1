@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bengaluru Yard — Investigation Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800;6..96,900&family=Special+Elite&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#090a0d; --paper:#e7e3dd; --red:#980d16; --bright-red:#d6232d; --route-blue:#3d87c8; --route-yellow:#d7ad3f; --white:#f9f8f5; --line:rgba(238,235,228,.16); --type:'Special Elite', ui-monospace, monospace; --display:'Bodoni Moda', Georgia, serif; --ui:'Space Grotesk', Arial, sans-serif; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; background:#08090c; color:var(--white); font-family:var(--ui); }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    .app { min-height:100vh; overflow:hidden; position:relative; }
+    .grain { pointer-events:none; position:fixed; inset:0; z-index:100; opacity:.12; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E"); mix-blend-mode:overlay; }
+    .screen { min-height:100vh; display:none; position:relative; }
+    .screen.active { display:flex; }
+    .eyebrow { text-transform:uppercase; letter-spacing:.22em; font-size:10px; color:#c6afa6; font-weight:700; }
+    .serif { font-family:var(--display); }
+    .type { font-family:var(--type); line-height:1.7; }
+    .red { color:var(--bright-red); }
+    .btn { border:1px solid rgba(213,33,43,.75); color:#fff; border-radius:4px; padding:12px 19px; background:rgba(126,9,18,.2); letter-spacing:.08em; text-transform:uppercase; font-size:11px; font-weight:700; transition:.2s ease; }
+    .btn:hover { background:#a4121d; box-shadow:0 0 22px rgba(218,20,31,.42); transform:translateY(-2px); }
+    .btn.fill { background:#a4121d; }
+    .btn.ghost { border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.04); }
+    .btn.small { padding:8px 12px; font-size:9px; }
+    .case-number { font-family:var(--type); color:#d3c9c3; letter-spacing:.09em; font-size:11px; }
+    .topline { width:42px; height:2px; background:var(--bright-red); display:inline-block; vertical-align:middle; margin-right:8px; }
+
+    /* Intro */
+    #opening { isolation:isolate; align-items:center; justify-content:center; background:#030405; }
+    #opening::before { content:""; position:absolute; inset:0; opacity:.78; background:radial-gradient(circle at 75% 15%, rgba(139,0,0,.3), transparent 25%), radial-gradient(circle at 13% 83%, rgba(53,80,115,.22), transparent 30%), linear-gradient(115deg,#020304 10%, #131014 55%, #050506); z-index:-3; }
+    .city-grid { position:absolute; inset:-5%; z-index:-2; opacity:.42; transform:rotate(-5deg) scale(1.1); background-image:linear-gradient(rgba(183,180,168,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(183,180,168,.09) 1px,transparent 1px); background-size:55px 55px; mask-image:radial-gradient(ellipse at 50% 50%,black,transparent 72%); }
+    .evidence { position:absolute; border:1px solid rgba(216,202,185,.18); width:235px; height:155px; transform:rotate(-11deg); right:8%; top:12%; opacity:.35; background:linear-gradient(145deg,rgba(255,255,255,.1),transparent); }
+    .evidence::after { content:'EVIDENCE  04'; font:10px var(--type); letter-spacing:.2em; color:#e9d1c2; position:absolute; left:16px; top:15px; }
+    .tape { position:absolute; width:130%; height:45px; left:-15%; top:22%; transform:rotate(-12deg); background:repeating-linear-gradient(90deg,#b49330 0 95px,#1e1707 95px 116px); opacity:.11; }
+    .opening-inner { text-align:center; width:min(770px,90vw); animation:rise 1.7s ease both; }
+    .opening-mark { margin:0 0 19px; color:#c5bbb4; font:11px var(--type); letter-spacing:.28em; }
+    .title { font-family:var(--display); font-size:clamp(58px,10vw,126px); line-height:.8; letter-spacing:-.08em; color:#ae141d; text-shadow:0 0 10px #70060c,0 0 34px rgba(158,0,9,.45); margin:0; }
+    .subtitle { font:12px var(--type); color:#d3cbc4; letter-spacing:.23em; margin:28px 0 34px; }
+    .audio-note { position:absolute; bottom:28px; left:32px; color:#777; font:10px var(--type); text-align:left; line-height:1.6; }
+    .live-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#e02c35; box-shadow:0 0 8px #e02c35; margin-right:7px; }
+    @keyframes rise { from { opacity:0; transform:scale(1.045) translateY(15px); } to { opacity:1; transform:none; } }
+
+    /* setup flow */
+    #setup { background:#0b0d11; align-items:center; justify-content:center; padding:32px; }
+    #setup::before { content:''; position:absolute; inset:0; opacity:.32; background:radial-gradient(circle at 15% 15%,#68111b 0, transparent 24%),linear-gradient(135deg,transparent 0 49%,rgba(255,255,255,.04) 50%,transparent 51%); background-size:auto,34px 34px; }
+    .setup-card { width:min(740px,100%); min-height:450px; padding:48px 52px; z-index:1; border:1px solid rgba(203,36,46,.5); background:linear-gradient(135deg,rgba(25,22,25,.9),rgba(5,6,8,.83)); box-shadow:0 20px 100px #000; border-radius:11px; display:flex; flex-direction:column; }
+    .setup-card h2 { margin:14px 0 15px; color:#c51c25; font:900 clamp(37px,6vw,63px)/.9 var(--display); letter-spacing:-.06em; }
+    .setup-card p { max-width:600px; color:#cfcac5; font-size:13px; }
+    .story { max-width:560px; margin-top:10px; }
+    .story p { margin:0 0 14px; }
+    .setup-actions { margin-top:auto; display:flex; gap:10px; justify-content:flex-end; }
+    .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin:30px 0; }
+    .mode-option { text-align:left; min-height:168px; padding:23px; border-radius:7px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.17); color:#eee; transition:.2s; }
+    .mode-option:hover,.mode-option.selected { border-color:#ca2029; background:rgba(145,13,21,.18); box-shadow:0 0 22px rgba(182,20,27,.2); }
+    .mode-option b { display:block; font:800 30px/.95 var(--display); color:#e9e4dd; margin-bottom:10px; }
+    .mode-option span { color:#aaa; font-size:11px; line-height:1.5; }
+    .people-picker { display:flex; align-items:center; gap:17px; margin:35px 0; }
+    .picker-display { width:95px; color:#d51f2b; text-align:center; font:900 70px/.8 var(--display); }
+    .stepper { width:40px; height:40px; border-radius:50%; border:1px solid #95303a; color:#fff; background:#221217; font-size:22px; }
+    .specs { display:flex; gap:8px; flex-wrap:wrap; margin-top:15px; }
+    .spec { font-size:10px; background:rgba(255,255,255,.06); padding:8px 11px; color:#b9b3ae; border-radius:2px; }
+    .loading-lines { margin-top:34px; height:105px; font:12px/2.1 var(--type); color:#999; }
+    .progress { overflow:hidden; height:3px; background:#312124; margin:27px 0 12px; }
+    .progress span { display:block; height:100%; width:100%; transform-origin:left; background:#ce1c26; animation:load 2.7s ease both; box-shadow:0 0 16px #e51623; }
+    @keyframes load { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+
+    /* Lobby */
+    #lobby { flex-direction:column; background:#e5e2dd; color:#17181c; padding:30px clamp(20px,5vw,76px); }
+    #lobby::before { content:''; position:absolute; inset:0; opacity:.5; background-image:linear-gradient(rgba(13,13,14,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(13,13,14,.04) 1px,transparent 1px); background-size:24px 24px; }
+    .lobby-header { position:relative; display:flex; align-items:flex-start; justify-content:space-between; border-bottom:1px solid #bbb6b0; padding-bottom:19px; }
+    .lobby-header h1 { font:900 clamp(33px,5vw,54px)/.9 var(--display); margin:5px 0 0; color:#161418; letter-spacing:-.06em; }
+    .room-badge { background:#16171a; color:#eee; padding:11px 14px; font:10px var(--type); letter-spacing:.12em; border-radius:3px; }
+    .lobby-grid { position:relative; flex:1; display:grid; grid-template-columns:1.25fr .75fr; gap:28px; padding:32px 0 19px; }
+    .join-panel,.room-panel { border:1px solid #bdb8b2; border-radius:8px; background:rgba(255,255,255,.34); padding:29px; }
+    .lobby-kicker { color:#8b0b13; font:700 10px var(--ui); letter-spacing:.22em; }
+    .join-panel h2,.room-panel h2 { font:800 36px/.95 var(--display); margin:8px 0 25px; letter-spacing:-.04em; }
+    label { display:block; margin:16px 0 7px; color:#57555a; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    .field { width:100%; padding:12px 13px; border:1px solid #b9b5ae; border-radius:3px; background:rgba(255,255,255,.58); color:#17181c; outline:none; }
+    .field:focus { border-color:#9d121b; box-shadow:0 0 0 3px rgba(157,18,27,.11); }
+    .role-row { display:flex; gap:8px; }
+    .role-pill { border:1px solid #bcb6b0; padding:10px 12px; border-radius:3px; background:transparent; color:#3d3e41; font-size:11px; flex:1; }
+    .role-pill.active { background:#15161a; color:#fff; border-color:#15161a; }
+    .dark-btn { margin-top:21px; background:#18191d; color:#fff; border:0; border-radius:3px; padding:12px 17px; text-transform:uppercase; font-size:10px; letter-spacing:.13em; font-weight:700; }
+    .room-code { font:800 41px/.8 var(--display); letter-spacing:.05em; color:#9b1019; margin:9px 0 17px; }
+    .qr { width:112px; height:112px; padding:8px; background:#fff; display:grid; grid-template-columns:repeat(7,1fr); grid-template-rows:repeat(7,1fr); gap:2px; }
+    .qr i { background:#101115; display:block; }
+    .qr i:nth-child(2n), .qr i:nth-child(3n) { opacity:0; }
+    .room-actions { display:flex; gap:6px; margin-top:13px; }
+    .room-actions button { background:transparent; border:1px solid #aaa5a0; border-radius:3px; padding:7px 9px; font-size:9px; color:#414145; }
+    .player-strip { position:relative; border-top:1px solid #bbb6b0; padding-top:18px; }
+    .player-strip h3 { margin:0 0 12px; font:700 10px var(--ui); letter-spacing:.17em; color:#676269; }
+    .players { display:flex; gap:8px; flex-wrap:wrap; }
+    .player { padding:8px 10px; border:1px solid #bbb6b0; background:rgba(255,255,255,.38); min-width:120px; }
+    .player b { display:block; font-size:11px; }
+    .player span { color:#317a42; font-size:9px; }
+    .player span::before { content:'●'; margin-right:4px; }
+    .lobby-continue { position:relative; text-align:right; margin-top:5px; }
+
+    /* game */
+    #game { --game-bg:#0c0e12; --panel:rgba(14,16,21,.78); --panel-solid:#13161b; --game-ink:#f1efea; --game-muted:#999b9e; --map:#161a20; --edge:rgba(255,255,255,.13); background:var(--game-bg); color:var(--game-ink); flex-direction:column; }
+    #game.detective-theme { --game-bg:#e4e1db; --panel:rgba(250,249,246,.83); --panel-solid:#f7f5f1; --game-ink:#1c1d20; --game-muted:#646569; --map:#d2d3d0; --edge:rgba(22,24,28,.16); }
+    .game-top { height:75px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 24px; border-bottom:1px solid var(--edge); z-index:5; background:var(--panel); backdrop-filter:blur(12px); }
+    .brand-mini { font:900 23px/.8 var(--display); color:#ae151e; letter-spacing:-.07em; }
+    .device-name { margin-top:4px; font:8px var(--type); color:var(--game-muted); letter-spacing:.12em; }
+    .round-mark { text-align:center; }
+    .round-mark b { display:block; font:800 29px/.8 var(--display); color:var(--game-ink); letter-spacing:-.05em; }
+    .round-mark span { font:9px var(--type); color:#aa111a; letter-spacing:.15em; }
+    .device-toggle { justify-self:end; display:flex; align-items:center; gap:7px; }
+    .device-toggle span { color:var(--game-muted); font-size:9px; font-weight:700; letter-spacing:.1em; }
+    .toggle { width:39px; height:21px; padding:2px; background:#282a2e; border:0; border-radius:22px; }
+    .toggle i { display:block; width:17px; height:17px; background:#d5d2ca; border-radius:50%; transition:.2s; }
+    .detective-theme .toggle i { transform:translateX(18px); }
+    .game-layout { display:grid; grid-template-columns:250px 1fr 280px; gap:15px; padding:15px; flex:1; min-height:0; }
+    .side-card { border:1px solid var(--edge); background:var(--panel); backdrop-filter:blur(13px); border-radius:8px; padding:16px; }
+    .side-card + .side-card { margin-top:12px; }
+    .side-card h3 { color:var(--game-ink); margin:5px 0 11px; font:800 23px/.85 var(--display); letter-spacing:-.05em; }
+    .side-card .eyebrow { color:#a31a22; font-size:8px; }
+    .balance { font:800 32px/.8 var(--display); color:#c41d26; margin:18px 0 7px; }
+    .balance-label { font:9px var(--type); color:var(--game-muted); }
+    .transport-list { margin-top:17px; display:grid; gap:7px; }
+    .transport-btn { position:relative; width:100%; display:grid; grid-template-columns:31px 1fr auto; gap:8px; text-align:left; align-items:center; padding:10px; border-radius:5px; border:1px solid var(--edge); background:rgba(255,255,255,.04); color:var(--game-ink); }
+    .transport-btn:hover:not(:disabled), .transport-btn.selected { border-color:#ba1922; background:rgba(169,17,27,.12); box-shadow:0 0 16px rgba(174,16,27,.14); }
+    .transport-btn:disabled { opacity:.37; cursor:not-allowed; }
+    .transport-btn .vehicle { font-size:23px; filter:saturate(.7); }
+    .transport-btn b { font-size:10px; letter-spacing:.1em; }
+    .transport-btn small { font:9px var(--type); color:var(--game-muted); }
+    .transport-btn em { font-style:normal; font-size:10px; font-weight:700; color:#b32028; }
+    .info-list { list-style:none; margin:9px 0 0; padding:0; }
+    .info-list li { display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--edge); padding:9px 0; font-size:10px; color:var(--game-muted); }
+    .info-list li:last-child { border:0; }
+    .avatar { width:20px; height:20px; border-radius:50%; background:var(--avatar,#d8b43e); border:2px solid var(--panel-solid); box-shadow:0 0 0 1px var(--avatar,#d8b43e); }
+    .badge { margin-left:auto; padding:3px 5px; color:#b31720; font-size:8px; border:1px solid rgba(179,23,32,.3); border-radius:2px; }
+    .map-shell { min-width:0; min-height:0; border:1px solid var(--edge); border-radius:9px; position:relative; overflow:hidden; background:var(--map); }
+    .map-shell::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 68% 35%,rgba(79,112,132,.22),transparent 32%),radial-gradient(circle at 20% 78%,rgba(161,88,42,.13),transparent 29%),linear-gradient(120deg,rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(25deg,rgba(255,255,255,.025) 1px,transparent 1px); background-size:auto,auto,42px 42px,79px 79px; }
+    .map-watermark { position:absolute; left:23px; bottom:19px; color:var(--game-muted); opacity:.34; font:900 clamp(27px,4vw,53px)/.8 var(--display); letter-spacing:-.08em; }
+    .map-meta { position:absolute; left:17px; top:15px; font:9px var(--type); color:var(--game-muted); letter-spacing:.09em; }
+    #mapSvg { position:absolute; inset:26px 10px 38px; width:calc(100% - 20px); height:calc(100% - 64px); overflow:visible; }
+    .route { fill:none; stroke-width:4; stroke-linecap:round; opacity:.45; }
+    .route.taxi { stroke:#d7ad3f; } .route.bus { stroke:#3d87c8; } .route.metro { stroke:#bd2633; stroke-width:5; }
+    .route.dim { opacity:.09; } .route.active { opacity:1; filter:drop-shadow(0 0 5px currentColor); stroke-width:7; }
+    .node { cursor:pointer; }
+    .node circle { fill:var(--map); stroke:#aaa59e; stroke-width:1.7; transition:.2s; }
+    .node text { fill:var(--game-ink); font:600 8px var(--ui); letter-spacing:.04em; pointer-events:none; paint-order:stroke; stroke:var(--map); stroke-width:3px; stroke-linejoin:round; }
+    .node:hover circle,.node.can-go circle { fill:#b91822; stroke:#f1e8df; r:7px; filter:drop-shadow(0 0 6px #c9212b); }
+    .node.selectedNode circle { fill:#f3e9de; stroke:#bb1a24; stroke-width:3; }
+    .marker { pointer-events:none; }
+    .marker .pin { stroke:var(--map); stroke-width:2; }
+    .marker text { fill:#fff; font:700 7px var(--ui); text-anchor:middle; dominant-baseline:central; }
+    .marker.x-hidden { opacity:0; }
+    .map-legend { position:absolute; right:15px; bottom:14px; display:flex; gap:9px; font-size:8px; color:var(--game-muted); }
+    .legend-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:3px; }
+    .question-layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:25px; background:rgba(7,8,10,.45); backdrop-filter:blur(4px); z-index:3; }
+    .detective-theme .question-layer { background:rgba(228,225,219,.42); }
+    .question-card { width:min(590px,92%); padding:30px; border:1px solid rgba(196,32,41,.54); border-radius:9px; background:var(--panel-solid); box-shadow:0 15px 65px rgba(0,0,0,.38); }
+    .question-card h2 { font:800 35px/.9 var(--display); margin:8px 0 19px; letter-spacing:-.06em; color:var(--game-ink); }
+    .question-card p { margin:0; font:14px/1.7 var(--type); color:var(--game-ink); }
+    .question-card .timer { margin:19px 0 15px; color:#bc1b24; font-size:10px; font-weight:700; letter-spacing:.16em; }
+    .answer-row { display:flex; gap:8px; margin-top:17px; }
+    .answer-row input { min-width:0; flex:1; padding:11px 12px; border-radius:3px; border:1px solid var(--edge); background:transparent; color:var(--game-ink); outline:none; }
+    .answer-row input:focus { border-color:#bd2029; }
+    .answer-row .btn { padding:10px 13px; }
+    .option-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:14px; }
+    .option { padding:12px; text-align:left; border:1px solid var(--edge); background:rgba(255,255,255,.03); color:var(--game-ink); border-radius:3px; font:11px var(--type); }
+    .option:hover { border-color:#be1d27; }
+    .question-footer { display:flex; justify-content:space-between; align-items:center; margin-top:15px; }
+    .question-footer small { color:var(--game-muted); font:9px var(--type); }
+    .waiting { margin-top:25px; padding:15px; background:rgba(145,18,27,.1); border-left:2px solid #bd1d27; color:var(--game-muted); font:11px var(--type); }
+    .event-toast { position:absolute; left:50%; top:30px; transform:translateX(-50%); z-index:10; padding:18px 23px; min-width:310px; border:1px solid rgba(205,29,39,.65); background:rgba(10,11,14,.93); box-shadow:0 8px 35px rgba(0,0,0,.45); text-align:center; animation:toast .35s ease both; }
+    .event-toast b { display:block; color:#d4232d; font:800 27px/.9 var(--display); letter-spacing:-.05em; }
+    .event-toast p { margin:7px 0 0; font:10px var(--type); color:#ddd5ce; }
+    @keyframes toast { from { opacity:0; transform:translate(-50%,-12px); } to { opacity:1; transform:translate(-50%,0); } }
+    .history-row { display:grid; grid-template-columns:24px 1fr 52px; gap:6px; padding:9px 0; border-bottom:1px solid var(--edge); font-size:9px; color:var(--game-muted); }
+    .history-row b { color:var(--game-ink); } .history-row em { font-style:normal; color:#be1a24; text-align:right; }
+    .active-turn { padding:11px; background:rgba(180,19,28,.1); border-left:2px solid #bd1d26; color:var(--game-ink); font:10px/1.5 var(--type); }
+    .status-banner { position:absolute; bottom:45px; left:50%; transform:translateX(-50%); min-width:330px; text-align:center; padding:10px; background:var(--panel-solid); border:1px solid var(--edge); border-radius:3px; z-index:2; color:var(--game-muted); font:10px var(--type); }
+    .status-banner b { color:#bd1e27; }
+    .bottom-controls { position:absolute; right:17px; top:15px; z-index:2; }
+    .bottom-controls .btn { padding:8px 11px; font-size:8px; }
+
+    /* End screen */
+    #ending { background:#040506; align-items:center; justify-content:center; padding:35px; overflow-y:auto; }
+    #ending::before { content:''; position:absolute; inset:0; opacity:.38; background:radial-gradient(ellipse at center,rgba(99,8,16,.45),transparent 54%),linear-gradient(135deg,transparent 49%,rgba(230,230,230,.04) 50%,transparent 51%); background-size:auto,34px 34px; }
+    .end-wrap { z-index:1; width:min(1030px,100%); text-align:center; padding:32px 0; }
+    .end-wrap h1 { margin:12px 0 7px; font:900 clamp(62px,10vw,117px)/.8 var(--display); color:#bd1923; letter-spacing:-.09em; text-shadow:0 0 24px rgba(162,11,19,.6); }
+    .end-sub { margin:19px 0 30px; color:#e3d8d1; font:12px var(--type); }
+    .summary { display:grid; grid-template-columns:1fr 1.15fr; gap:13px; text-align:left; }
+    .end-card { background:rgba(18,19,22,.86); border:1px solid rgba(200,190,181,.2); border-radius:7px; padding:23px; }
+    .end-card h3 { margin:3px 0 17px; color:#ddd7cf; font:800 28px/.85 var(--display); letter-spacing:-.05em; }
+    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:rgba(255,255,255,.11); }
+    .stat { padding:14px; background:#15171a; }
+    .stat small { display:block; color:#aaa39e; font:9px var(--type); }
+    .stat b { color:#e6dfd8; display:block; font-size:14px; margin-top:5px; }
+    .report { display:grid; gap:6px; }
+    .report-row { display:grid; grid-template-columns:1.3fr repeat(3,.7fr); font-size:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.11); color:#b9b2ac; }
+    .report-row b { color:#efebe6; }
+    .route-replay { margin-top:13px; padding:15px; text-align:left; background:rgba(122,10,16,.13); border-left:2px solid #b91b24; color:#d4ccc4; font:10px/1.6 var(--type); }
+    .end-actions { display:flex; justify-content:center; gap:10px; margin-top:21px; }
+    @media(max-width:920px) { .game-layout { grid-template-columns:210px 1fr; } .game-layout > .right-rail { display:none; } .lobby-grid { grid-template-columns:1fr; } .summary { grid-template-columns:1fr; } }
+    @media(max-width:650px) { .setup-card { padding:35px 27px; } .mode-grid { grid-template-columns:1fr; } .game-layout { display:block; padding:8px; } .left-rail { display:none; } .map-shell { height:calc(100vh - 92px); } .game-top { padding:0 12px; } .brand-mini { font-size:18px; } .round-mark b { font-size:22px; } .question-card { padding:22px; } .option-grid { grid-template-columns:1fr; } .device-toggle span { display:none; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="grain"></div>
+  <main id="opening" class="screen active">
+    <div class="city-grid"></div><div class="evidence"></div><div class="tape"></div>
+    <div class="opening-inner">
+      <p class="opening-mark">CASE FILE · BENGALURU · 2026</p>
+      <h1 class="title">BENGALURU<br>YARD</h1>
+      <p class="subtitle">KNOWLEDGE EARNS MONEY · MONEY MOVES THE CHASE</p>
+      <button class="btn fill" id="enterCase">BEGIN INVESTIGATION&nbsp; →</button>
+    </div>
+    <div class="audio-note"><span class="live-dot"></span> AMBIENCE ENABLED<br>RAIN · DISTANT SIRENS · RADIO STATIC</div>
+  </main>
+
+  <main id="setup" class="screen">
+    <section class="setup-card" id="setupCard"></section>
+  </main>
+
+  <main id="lobby" class="screen">
+    <header class="lobby-header"><div><span class="lobby-kicker">Secure multiplayer session</span><h1>INVESTIGATION ROOM</h1></div><div class="room-badge">ROOM ACTIVE · <b id="roomCount">5 / 6</b> CONNECTED</div></header>
+    <section class="lobby-grid">
+      <article class="join-panel"><span class="lobby-kicker">Detective Hub / private device</span><h2>JOIN INVESTIGATION</h2><label for="playerName">Player name</label><input class="field" id="playerName" value="Nisha" maxlength="18"><label>Role</label><div class="role-row"><button class="role-pill active" data-role="Detective">Detective</button><button class="role-pill" data-role="Culprit">Culprit</button></div><button class="dark-btn" id="joinRoom">Join room</button><p id="joinNote" style="font-size:11px;color:#6e6b6c"></p></article>
+      <article class="room-panel"><span class="lobby-kicker">Investigation ID</span><h2>ROOM CODE</h2><div class="room-code">BLR-7A42</div><div class="qr" aria-label="QR code"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="room-actions"><button id="copyCode">Copy code</button><button id="shareCode">Share</button><button>Download QR</button></div><p style="font:10px/1.7 var(--type); color:#656267; margin-top:20px">Use the same code on the private Mr. X device and the shared Detective Hub.</p></article>
+    </section>
+    <section class="player-strip"><h3>PLAYER STATUS</h3><div class="players" id="playerList"></div></section><div class="lobby-continue"><button class="dark-btn" id="showRules">ALL PLAYERS READY&nbsp; →</button></div>
+  </main>
+
+  <main id="game" class="screen">
+    <header class="game-top"><div><div class="brand-mini">BENGALURU YARD</div><div class="device-name" id="deviceName">PRIVATE CULPRIT CONSOLE</div></div><div class="round-mark"><b id="roundLabel">ROUND 01</b><span>/ 24 · INVESTIGATION</span></div><div class="device-toggle"><span>VIEW: <b id="viewText">MR. X</b></span><button class="toggle" id="deviceToggle" aria-label="Toggle device"><i></i></button></div></header>
+    <div class="game-layout">
+      <aside class="left-rail"><div class="side-card" id="accountCard"></div><div class="side-card" id="rosterCard"></div></aside>
+      <section class="map-shell"><div class="map-meta" id="mapMeta">SOUTH SECTOR · LIVE CITY NETWORK</div><svg id="mapSvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg><div class="map-watermark">BENGALURU</div><div class="map-legend"><span><i class="legend-dot" style="background:#d7ad3f"></i>TAXI</span><span><i class="legend-dot" style="background:#3d87c8"></i>BUS</span><span><i class="legend-dot" style="background:#bd2633"></i>METRO</span></div><div class="bottom-controls"><button class="btn ghost" id="endDemo">CASE FILE</button></div><div id="questionLayer"></div><div id="toast"></div><div class="status-banner" id="statusBanner"></div></section>
+      <aside class="right-rail"><div class="side-card" id="historyCard"></div><div class="side-card" id="turnCard"></div></aside>
+    </div>
+  </main>
+
+  <main id="ending" class="screen"><section class="end-wrap" id="endContent"></section></main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const screens = ['opening','setup','lobby','game','ending'];
+function go(id){ screens.forEach(x=>$('#'+x).classList.toggle('active',x===id)); }
+
+const setupCard = $('#setupCard');
+let setupStep = 0, playerTarget = 6, chosenMode = 'multiplayer';
+function renderSetup(){
+  const views = [
+    `<span class="eyebrow"><i class="topline"></i>Opening briefing</span><h2>THE CITY IS<br>WATCHING.</h2><div class="story type"><p>Bengaluru is in chaos.</p><p>A notorious criminal known only as <span class="red">Mr. X</span> has disappeared into the city.</p><p>Every clue matters. Every decision counts. Find him before he vanishes forever.</p></div><div class="setup-actions"><button class="btn fill" onclick="nextSetup()">NEXT →</button></div>`,
+    `<span class="eyebrow"><i class="topline"></i>Configure case</span><h2>CHOOSE YOUR<br>OPERATION.</h2><div class="mode-grid"><button class="mode-option ${chosenMode==='single'?'selected':''}" onclick="setMode('single')"><b>SINGLE<br>PLAYER</b><span>Play both sides locally. Ideal for learning the network.</span></button><button class="mode-option ${chosenMode==='multiplayer'?'selected':''}" onclick="setMode('multiplayer')"><b>MULTI<br>PLAYER</b><span>One private culprit console. One shared detective hub.</span></button></div><div class="setup-actions"><button class="btn ghost" onclick="backSetup()">BACK</button><button class="btn fill" onclick="nextSetup()">CONTINUE →</button></div>`,
+    `<span class="eyebrow"><i class="topline"></i>Configure case</span><h2>HOW MANY<br>PLAYERS?</h2><p class="type">One player is secretly assigned Mr. X. The remaining players form the detective team.</p><div class="people-picker"><button class="stepper" onclick="changePlayers(-1)">−</button><div class="picker-display" id="playerPicker">${playerTarget}</div><button class="stepper" onclick="changePlayers(1)">+</button><div class="specs"><span class="spec">01 CULPRIT</span><span class="spec">${playerTarget-1} DETECTIVES</span><span class="spec">24 ROUNDS</span></div></div><div class="setup-actions"><button class="btn ghost" onclick="backSetup()">BACK</button><button class="btn fill" onclick="nextSetup()">CREATE ROOM →</button></div>`,
+    `<span class="eyebrow"><i class="topline"></i>Establishing secure link</span><h2>GENERATING<br>ROOM.</h2><div class="progress"><span></span></div><div class="loading-lines"><div>✓ &nbsp; Creating session...</div><div>✓ &nbsp; Establishing network...</div><div>✓ &nbsp; Assigning investigation ID...</div><div class="red">✓ &nbsp; Room generated.</div></div><div class="setup-actions"><button class="btn fill" id="toLobby">ENTER LOBBY →</button></div>`
+  ];
+  setupCard.innerHTML = views[setupStep];
+  if(setupStep===3) $('#toLobby').onclick = ()=>{go('lobby');renderLobby();};
+}
+function nextSetup(){ if(setupStep<3){setupStep++;renderSetup();} }
+function backSetup(){ if(setupStep>0){setupStep--;renderSetup();} }
+function setMode(m){chosenMode=m;renderSetup();}
+function changePlayers(v){playerTarget=Math.max(2,Math.min(15,playerTarget+v));renderSetup();}
+$('#enterCase').onclick=()=>{ go('setup');renderSetup(); };
+
+const lobbyPeople=[['Ayaan','Connected'],['Priya','Connected'],['Rahul','Waiting'],['Ananya','Connected'],['Kiran','Connected']];
+let joined=false, pickedRole='Detective';
+function renderLobby(){
+  const count = joined ? 6 : 5;
+  $('#roomCount').textContent=`${count} / ${playerTarget}`;
+  $('#playerList').innerHTML = [...lobbyPeople,...(joined?[[ $('#playerName').value||'Nisha','Connected' ]]:[])].map(([n,s])=>`<div class="player"><b>${n}</b><span style="color:${s==='Waiting'?'#a3760b':'#317a42'}">${s}</span></div>`).join('');
+}
+document.querySelectorAll('.role-pill').forEach(b=>b.onclick=()=>{pickedRole=b.dataset.role;document.querySelectorAll('.role-pill').forEach(x=>x.classList.toggle('active',x===b));});
+$('#joinRoom').onclick=()=>{joined=true; $('#joinNote').textContent = `${pickedRole} console linked — welcome, ${$('#playerName').value||'Nisha'}.`; renderLobby();};
+$('#copyCode').onclick=async()=>{try{await navigator.clipboard.writeText('BLR-7A42');$('#copyCode').textContent='Copied!';}catch{$('#copyCode').textContent='BLR-7A42';}};
+$('#shareCode').onclick=()=>{ $('#shareCode').textContent='Link prepared'; };
+$('#showRules').onclick=()=>{go('setup'); setupStep=0; setupCard.innerHTML=`<span class="eyebrow"><i class="topline"></i>Rules of the investigation</span><h2>THE CHASE<br>BEGINS HERE.</h2><div class="story type"><p>Detectives must locate and capture Mr. X. Mr. X must survive until round 24.</p><p>Answer without options for <span class="red">₹500</span>; ask for options for <span class="red">₹200</span>. Taxi costs ₹200, Bus ₹300, Metro ₹500.</p><p>Mr. X is hidden except in reveal rounds. Use every route as evidence.</p></div><div class="setup-actions"><button class="btn fill" onclick="startGame()">BEGIN GAME →</button></div>`;};
+
+const places={
+  majestic:[32,50], mgroad:[52,48], cubbon:[45,56], indiranagar:[67,45], koramangala:[62,66], jayanagar:[47,77], banashankari:[29,77], silkboard:[68,79], electronic:[73,93], krpuram:[77,58], whitefield:[91,44], hebbal:[48,22], yelahanka:[46,7], airport:[70,7], malleshwaram:[31,33]
+};
+const placeNames={majestic:'Majestic',mgroad:'MG Road',cubbon:'Cubbon Park',indiranagar:'Indiranagar',koramangala:'Koramangala',jayanagar:'Jayanagar',banashankari:'Banashankari',silkboard:'Silk Board',electronic:'Electronic City',krpuram:'KR Puram',whitefield:'Whitefield',hebbal:'Hebbal',yelahanka:'Yelahanka',airport:'KIA Airport',malleshwaram:'Malleshwaram'};
+const routes=[
+  ['majestic','malleshwaram','taxi'],['malleshwaram','hebbal','taxi'],['hebbal','yelahanka','bus'],['yelahanka','airport','bus'],['majestic','cubbon','taxi'],['cubbon','mgroad','taxi'],['mgroad','indiranagar','taxi'],['mgroad','koramangala','taxi'],['koramangala','jayanagar','taxi'],['jayanagar','banashankari','taxi'],['koramangala','silkboard','taxi'],['silkboard','electronic','bus'],['indiranagar','krpuram','taxi'],['krpuram','whitefield','bus'],['majestic','hebbal','bus'],['hebbal','krpuram','bus'],['majestic','mgroad','metro'],['mgroad','indiranagar','metro'],['indiranagar','krpuram','metro'],['krpuram','whitefield','metro'],['majestic','jayanagar','metro'],['jayanagar','silkboard','metro'],['koramangala','electronic','bus']
+];
+const transports={taxi:{name:'TAXI',cost:200,icon:'🚕'},bus:{name:'BUS',cost:300,icon:'🚌'},metro:{name:'METRO',cost:500,icon:'🚇'}};
+const detectives=[{id:'riya',name:'Riya',pos:'majestic',money:400,color:'#d0a927',correct:0,earned:400},{id:'arjun',name:'Arjun',pos:'cubbon',money:300,color:'#438fc7',correct:0,earned:300},{id:'kabir',name:'Kabir',pos:'koramangala',money:500,color:'#9b5aa7',correct:0,earned:500},{id:'meera',name:'Meera',pos:'hebbal',money:200,color:'#d1604d',correct:0,earned:200}];
+let state;
+function resetState(){state={round:1,view:'x',phase:'intro',x:{pos:'indiranagar',money:700,earned:700,spent:0,trips:[]},active:0,transport:null,history:[],toast:'',showOptions:false,lastQuestion:null,routeTrail:[],winner:null,revealed:false};detectives.forEach((d,i)=>Object.assign(d,{pos:['majestic','cubbon','koramangala','hebbal'][i],money:[400,300,500,200][i],correct:0,earned:[400,300,500,200][i]}));}
+function startGame(){resetState();go('game');renderGame();toast('ROUND 01 / 24','All positions are visible before the chase begins.');setTimeout(()=>{state.phase='xquestion';renderGame();},1500);}
+
+function connected(loc,type){return routes.filter(r=>r[2]===type&&(r[0]===loc||r[1]===loc)).map(r=>r[0]===loc?r[1]:r[0]);}
+function isXVisible(){return state.view==='x'||state.phase==='intro'||state.revealed||state.winner;}
+function activeDet(){return detectives[state.active];}
+function canInteract(){return (state.view==='x'&&['xquestion','xmove'].includes(state.phase))||(state.view==='d'&&['dquestion','dmove','reveal'].includes(state.phase));}
+function toast(title,detail){state.toast={title,detail};renderToast();setTimeout(()=>{if(state.toast){state.toast='';renderToast();}},2500);}
+function renderToast(){const t=$('#toast'); if(state.toast){t.innerHTML=`<div class="event-toast"><b>${state.toast.title}</b><p>${state.toast.detail}</p></div>`;}else t.innerHTML='';}
+function renderGame(){
+  $('#game').classList.toggle('detective-theme',state.view==='d');
+  $('#deviceName').textContent=state.view==='x'?'PRIVATE CULPRIT CONSOLE':'SHARED DETECTIVE HUB';
+  $('#viewText').textContent=state.view==='x'?'MR. X':'DETECTIVE HUB';
+  $('#roundLabel').textContent=`${state.round===24?'FINAL ROUND':`ROUND ${String(state.round).padStart(2,'0')}`}`;
+  renderAccount();renderRoster();renderHistory();renderTurn();renderMap();renderQuestion();renderStatus();renderToast();
+}
+function renderAccount(){
+  const x=state.x, det=activeDet(), isX=state.view==='x'; const who=isX?x:det;
+  const moving=(state.phase==='xmove'&&isX)||(state.phase==='dmove'&&!isX), canAfford=Object.values(transports).some(t=>who.money>=t.cost);
+  $('#accountCard').innerHTML=`<span class="eyebrow">${isX?'Private intelligence':'Active detective'}</span><h3>${isX?'MR. X':det.name.toUpperCase()}</h3><div class="balance">₹${who.money}</div><div class="balance-label">REMAINING BALANCE</div>${moving?`<div class="transport-list">${Object.entries(transports).map(([id,t])=>`<button class="transport-btn ${state.transport===id?'selected':''}" onclick="chooseTransport('${id}')" ${who.money<t.cost?'disabled':''}><span class="vehicle">${t.icon}</span><span><b>${t.name}</b><small>${who.money<t.cost?'INSUFFICIENT FUNDS':'SELECT ROUTE'}</small></span><em>₹${t.cost}</em></button>`).join('')}${!canAfford?`<button class="btn ghost small" onclick="skipMove()">SKIP MOVEMENT →</button>`:''}</div>`:`<ul class="info-list"><li><span>Question reward</span><b class="red">₹500 / ₹200</b></li><li><span>Location</span><b>${isX?placeNames[x.pos]:'Visible to team'}</b></li><li><span>${isX?'Status':'Current action'}</span><span class="badge">${state.phase.includes('question')?'ANSWERING':'MOVEMENT'}</span></li></ul>`}`;
+}
+function renderRoster(){ $('#rosterCard').innerHTML=`<span class="eyebrow">${state.view==='x'?'Detective positions':'Investigation team'}</span><h3>${state.view==='x'?'EYES ON THE CITY':'DETECTIVES'}</h3><ul class="info-list">${detectives.map((d,i)=>`<li><i class="avatar" style="--avatar:${d.color}"></i><span>${d.name}</span><b>${state.view==='x'?placeNames[d.pos]:'₹'+d.money}</b>${i===state.active?'<span class="badge">ACTIVE</span>':''}</li>`).join('')}</ul>`; }
+function renderHistory(){ $('#historyCard').innerHTML=`<span class="eyebrow">Known evidence</span><h3>MOVEMENT LOG</h3>${state.history.length?state.history.slice().reverse().map(h=>`<div class="history-row"><span>R${String(h.round).padStart(2,'0')}</span><b>MR. X MOVED</b><em>${h.type.toUpperCase()}</em></div>`).join(''):'<p class="type" style="font-size:10px;color:var(--game-muted)">No movement recorded.<br>The city is quiet.</p>'}`; }
+function renderTurn(){let text=''; if(state.phase==='intro')text='INITIAL POSITIONS<br>ARE VISIBLE TO ALL.'; else if(state.phase==='xquestion'||state.phase==='xmove')text=state.view==='x'?'YOUR PRIVATE TURN.':'WAITING FOR MR. X.'; else if(state.phase==='dquestion'||state.phase==='dmove')text=state.view==='d'?`DETECTIVE ${state.active+1} — ${activeDet().name.toUpperCase()}'S TURN.`:`THE DETECTIVES ARE MOVING.`;else if(state.phase==='reveal')text='MR. X HAS BEEN LOCATED.'; $('#turnCard').innerHTML=`<span class="eyebrow">Turn state</span><h3>LIVE CASE</h3><div class="active-turn">${text}</div><ul class="info-list"><li><span>Players</span><b>5</b></li><li><span>Detectives</span><b>4</b></li><li><span>Reveal round</span><b>R${Math.ceil(state.round/4)*4}</b></li></ul>`; }
+function renderMap(){
+ const current=(state.phase==='xmove'&&state.view==='x'?state.x:state.phase==='dmove'&&state.view==='d'?activeDet():null); const avail=current&&state.transport?connected(current.pos,state.transport):[];
+ let svg=''; routes.forEach(([a,b,t])=>{const [x1,y1]=places[a],[x2,y2]=places[b];const act=state.transport===t&&current&&(a===current.pos||b===current.pos)?'active':'';svg+=`<path class="route ${t} ${current&&state.transport&&!act?'dim':''} ${act}" d="M${x1} ${y1} L${x2} ${y2}"/>`;});
+ Object.entries(places).forEach(([id,[x,y]])=>{const go=avail.includes(id);svg+=`<g class="node ${go?'can-go':''}" onclick="selectDestination('${id}')"><circle cx="${x}" cy="${y}" r="4.3"/><text x="${x+1}" y="${y-6}">${placeNames[id]}</text></g>`;});
+ detectives.forEach((d,i)=>{const [x,y]=places[d.pos];svg+=`<g class="marker"><circle class="pin" cx="${x}" cy="${y}" r="6" fill="${d.color}"/><text x="${x}" y="${y+.3}">${i+1}</text></g>`;});
+ const [xx,xy]=places[state.x.pos];svg+=`<g class="marker ${isXVisible()?'':'x-hidden'}"><circle class="pin" cx="${xx}" cy="${xy}" r="7" fill="#b9111c"/><text x="${xx}" y="${xy+.3}">X</text></g>`;
+ $('#mapSvg').innerHTML=svg;
+ $('#mapMeta').textContent=current&&state.transport?`${transports[state.transport].name} NETWORK SELECTED · CHOOSE HIGHLIGHTED NODE`:(state.revealed?'REVEAL EVENT · LOCATION CONFIRMED':'SOUTH SECTOR · LIVE CITY NETWORK');
+}
+const questions=[
+ {q:'Which technology is used to determine the sequence of DNA bases?',a:['dna sequencing','sequencing'],opts:['DNA Sequencing','Thermography','Chromatography','Electrolysis']},
+ {q:'Which Bengaluru location is known as the city’s primary central rail hub?',a:['majestic','kempegowda'],opts:['Majestic','Whitefield','Yelahanka','Koramangala']},
+ {q:'What is the powerhouse of the cell?',a:['mitochondria','mitochondrion'],opts:['Ribosome','Mitochondria','Nucleus','Golgi apparatus']}
+];
+function currentQuestion(){return questions[(state.round+state.active)%questions.length];}
+function renderQuestion(){ const layer=$('#questionLayer'); if(state.phase==='reveal'){layer.innerHTML=`<div class="question-layer"><div class="question-card"><span class="eyebrow">REVEAL ROUND · VERIFIED CITY INTELLIGENCE</span><h2>MR. X HAS BEEN<br><span class="red">LOCATED.</span></h2><p>The culprit's current position is <b>${placeNames[state.x.pos]}</b>. Mark the location. Build the perimeter.</p>${state.view==='d'?`<div class="question-footer"><small>LOCATION IS NOW ON THE INVESTIGATION BOARD</small><button class="btn fill" onclick="continueReveal()">BEGIN DETECTIVE TURN →</button></div>`:`<div class="waiting">The Detective Hub is studying your revealed position. Remain hidden until the movement phase resumes.</div>`}</div></div>`;return;} const isQuestion=['xquestion','dquestion'].includes(state.phase);if(!isQuestion){ layer.innerHTML=''; return; } const q=currentQuestion(), interactive=(state.phase==='xquestion'&&state.view==='x')||(state.phase==='dquestion'&&state.view==='d'); let owner=state.phase==='xquestion'?'MR. X':`DETECTIVE ${state.active+1} — ${activeDet().name.toUpperCase()}`;
+ layer.innerHTML=`<div class="question-layer"><div class="question-card"><span class="eyebrow">QUESTION 0${state.round} · ${owner}</span><h2>KNOWLEDGE IS<br><span class="red">CURRENCY.</span></h2><p>${q.q}</p><div class="timer">◷ 00:42 REMAINING</div>${interactive?state.showOptions?`<div class="option-grid">${q.opts.map(o=>`<button class="option" onclick="submitAnswer('${o.replace(/'/g,"\\'")}')">${o}</button>`).join('')}</div><div class="question-footer"><small>OPTIONS REQUESTED · CORRECT ANSWER = ₹200</small><button class="btn ghost small" onclick="closeOptions()">ANSWER MANUALLY</button></div>`:`<div class="answer-row"><input id="answerInput" placeholder="Type your answer…" autocomplete="off"><button class="btn fill" onclick="submitTyped()">SUBMIT</button></div><div class="question-footer"><small>DIRECT ANSWER · CORRECT ANSWER = ₹500</small><button class="btn ghost small" onclick="showOptions()">SHOW OPTIONS</button></div>`:`<div class="waiting">${state.view==='d'?'MR. X is answering on the private device. The question is visible, but the answer controls are locked.':`The Detective Hub is now handling ${owner}'s answer. Stay hidden.`}</div>`}</div></div>`; }
+function renderStatus(){let msg='';if(state.phase==='intro')msg='<b>STARTING POSITIONS</b> · Confirmed on both devices. The chase begins in moments.';else if(state.phase==='xmove')msg=state.view==='x'?'<b>SELECT A TRANSPORT METHOD</b> · Routes light up when selected.':'<b>MR. X IS CHOOSING A ROUTE</b> · No destination is visible.';else if(state.phase==='dmove')msg=state.view==='d'?`<b>${activeDet().name.toUpperCase()} — SELECT A ROUTE</b> · Capture Mr. X by moving onto his node.`:'<b>THE DETECTIVES ARE MOVING</b> · Their locations are public.';else if(state.phase==='reveal')msg='<b>MR. X HAS BEEN LOCATED</b> · His position is visible for this reveal event.';else msg='<b>QUESTION PHASE</b> · Every correct answer funds the next move.'; $('#statusBanner').innerHTML=msg; }
+function showOptions(){state.showOptions=true;renderGame();}
+function closeOptions(){state.showOptions=false;renderGame();}
+function submitTyped(){const v=$('#answerInput').value;submitAnswer(v);}
+function submitAnswer(value){const q=currentQuestion();const correct=q.a.includes(String(value).trim().toLowerCase());const award=correct?(state.showOptions?200:500):0;if(state.phase==='xquestion'){state.x.money+=award;state.x.earned+=award;state.phase='xmove';}else {const d=activeDet();d.money+=award;d.earned+=award;if(correct)d.correct++;state.phase='dmove';}state.showOptions=false;toast(correct?`₹${award} GATHERED`:'NOT CORRECT',correct?'Use it carefully — the city is expensive.':'₹0 gathered. Existing funds are safe.');renderGame();}
+function chooseTransport(type){const who=state.phase==='xmove'?state.x:activeDet();if(who.money<transports[type].cost)return;state.transport=type;renderGame();}
+function selectDestination(id){if(!['xmove','dmove'].includes(state.phase)||!state.transport)return;const who=state.phase==='xmove'?state.x:activeDet();if(!connected(who.pos,state.transport).includes(id))return;const from=who.pos;who.pos=id;who.money-=transports[state.transport].cost;if(who===state.x){state.x.spent+=transports[state.transport].cost;state.x.trips.push(state.transport);state.history.push({round:state.round,type:state.transport});state.routeTrail.push({from,to:id,type:state.transport});state.transport=null;state.revealed=state.round%4===0;if(state.revealed){state.phase='reveal';toast('MR. X HAS BEEN LOCATED',`Reveal round ${state.round}: ${placeNames[id]}.`);}else{state.phase='dquestion';state.active=0;toast('MR. X MOVED',`Transport used: ${transports[state.history.at(-1).type].name}.`);} }else{state.routeTrail.push({from,to:id,type:state.transport,detective:who.name});state.transport=null;if(who.pos===state.x.pos){endGame('detectives');return;}if(state.active<detectives.length-1){state.active++;state.phase='dquestion';toast('NEXT DETECTIVE',`${activeDet().name} is now answering.`);}else{roundComplete();}}
+ renderGame(); }
+function skipMove(){const isX=state.phase==='xmove';if(!isX&&state.phase!=='dmove')return;if(isX){state.history.push({round:state.round,type:'NO MOVE'});state.transport=null;state.revealed=state.round%4===0;if(state.revealed){state.phase='reveal';toast('MR. X HAS BEEN LOCATED',`Reveal round ${state.round}: ${placeNames[state.x.pos]}.`);}else{state.phase='dquestion';state.active=0;toast('MR. X COULD NOT MOVE','Insufficient funds. No transport clue was recorded.');}}else{state.transport=null;if(state.active<detectives.length-1){state.active++;state.phase='dquestion';toast('NEXT DETECTIVE',`${activeDet().name} is now answering.`);}else{roundComplete();}}renderGame();}
+function continueReveal(){if(state.phase!=='reveal')return;state.phase='dquestion';state.active=0;toast('REVEAL LOGGED','Detectives begin their movement phase.');renderGame();}
+function roundComplete(){if(state.round>=24){endGame('x');return;}toast(`ROUND ${String(state.round).padStart(2,'0')} COMPLETE`,'A new question phase is about to begin.');state.round++;state.phase='xquestion';state.active=0;state.revealed=false;setTimeout(renderGame,500);}
+$('#deviceToggle').onclick=()=>{state.view=state.view==='x'?'d':'x';renderGame();};
+$('#endDemo').onclick=()=>endGame(state.round>9?'x':'detectives');
+function endGame(winner){state.winner=winner;go('ending');const cap=winner==='detectives';const x=state.x;$('#endContent').innerHTML=`<span class="eyebrow"><i class="topline"></i>Case #BLR-7A42 · Final investigation board</span><h1>${cap?'CASE CLOSED':'CASE UNSOLVED'}</h1><p class="end-sub">${cap?'MR. X HAS BEEN CAPTURED · BENGALURU IS SAFE… FOR NOW.':'MR. X HAS ESCAPED · THE CITY STILL HAS A GHOST.'}</p><div class="summary"><article class="end-card"><span class="eyebrow">Investigation summary</span><h3>${cap?'TARGET LOCATED':'TARGET LOST'}</h3><div class="stats-grid"><div class="stat"><small>Rounds played</small><b>${state.round} / 24</b></div><div class="stat"><small>${cap?'Captured at':'Last known location'}</small><b>${placeNames[x.pos]}</b></div><div class="stat"><small>Mr. X transport</small><b>${x.trips.at(-1)?.toUpperCase()||'—'}</b></div><div class="stat"><small>Total money earned</small><b>₹${detectives.reduce((a,d)=>a+d.earned,0)+x.earned}</b></div></div><div class="route-replay"><b>REVEAL THE CHASE</b><br>${state.routeTrail.filter(r=>!r.detective).map((r,i)=>`R${i+1}: ${placeNames[r.from]} → ${placeNames[r.to]} by ${r.type.toUpperCase()}`).join('<br>')||'Route playback will appear after Mr. X makes his first move.'}</div></article><article class="end-card"><span class="eyebrow">Detective report</span><h3>TEAM PERFORMANCE</h3><div class="report"><div class="report-row" style="color:#9f9790"><span>DETECTIVE</span><span>CORRECT</span><span>EARNED</span><span>BALANCE</span></div>${detectives.map(d=>`<div class="report-row"><b>${d.name.toUpperCase()}</b><span>${d.correct}</span><span>₹${d.earned}</span><span>₹${d.money}</span></div>`).join('')}</div><div class="route-replay"><b>CASE FILE STATUS: ${cap?'CLOSED · CULPRIT CAPTURED':'OPEN · CULPRIT AT LARGE'}</b><br>${cap?'The investigation is over. The city will sleep a little easier tonight.':'Twenty-four rounds. Countless decisions. One mistake was all he needed.'}</div></article></div><div class="end-actions"><button class="btn ghost" onclick="go('opening')">MAIN MENU</button><button class="btn fill" onclick="startGame()">PLAY AGAIN →</button></div>`;}
+</script>
+</body>
+</html>
